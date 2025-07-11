@@ -8,7 +8,7 @@ export async function POST(req: Request) {
   });
 
   const systemInstruction = `
-You are an expert resume evaluator. 
+You are an expert resume evaluator.
 Given a resume text, you will:
 1. Provide an ATS compatibility score (out of 100)
 2. Highlight strengths and weaknesses

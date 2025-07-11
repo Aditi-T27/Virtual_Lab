@@ -1,23 +1,45 @@
 'use client';
 import { useState } from 'react';
+import { useResumeStore } from '../store/resumeStore';
 
 export default function UploadPage() {
   const [result, setResult] = useState('');
   const [loading, setLoading] = useState(false);
+  const{ resumeFile, setResumeFile }= useResumeStore();
 
 
   const handleAnalyze = async () => {
+
+    if(!resumeFile){
+      alert('Please upload a resume before analysing');
+      return ;
+    }
     setLoading(true);
-    const res = await fetch('/api/users/analyser', { method: 'POST' });
+
+    const formData =new FormData();
+    formData.append('resume', resumeFile);
+    const res= await fetch('api/users/parser', { method:'POST', body:formData});
+
+    // const res = await fetch('/api/users/analyser', { method: 'POST' });
     const data = await res.json();
     setResult(data.answer);
+    console.log(data.answer);
     setLoading(false);
   };
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-8 bg-[#1e293b] text-white">
       <h1 className="text-4xl font-bold mb-6 tracking-wide text-white">Resume Analyzer AI</h1>
+      
+      {/* File Upload */}
+      <input type="file" accept=".pdf" onChange={(e) => {
+          if (e.target.files && e.target.files[0]) {
+            setResumeFile(e.target.files[0]);
+          }
+        }} className="mb-4"
+      />
 
+      {/* Analyze Button */}
       <button
         onClick={handleAnalyze}
         className="bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 text-white px-6 py-3 rounded-2xl shadow-lg hover:scale-105 transition-all duration-300"

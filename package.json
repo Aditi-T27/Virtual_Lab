@@ -12,8 +12,10 @@
     "@langchain/google-genai": "^0.2.14",
     "langchain": "^0.3.29",
     "next": "15.3.5",
+    "pdf-parse": "^1.1.1",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "zustand": "^5.0.6"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
