@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { useResumeStore } from '../store/resumeStore';
 
 type AnalysisResult = {
   score?: string | number;
@@ -12,13 +13,22 @@ type AnalysisResult = {
 export default function UploadPage() {
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [loading, setLoading] = useState(false);
+  const{ resumeFile, setResumeFile }= useResumeStore();
   const [error, setError] = useState('');
 
   const handleAnalyze = async () => {
+    if(!resumeFile){
+      alert('Please upload a resume before analysing');
+      return ;
+    }
     setLoading(true);
     setError('');
+
+    const formData =new FormData();
+    formData.append('resume', resumeFile);
+
     try {
-      const res = await fetch('/api/users/analyser', { method: 'POST' });
+      const res = await fetch('/api/users/parser', { method: 'POST', body: formData });
       const data = await res.json();
 
       if (res.ok && data.answer) {
@@ -36,8 +46,17 @@ export default function UploadPage() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-8 bg-[#1e293b] text-white">
-      <h1 className="text-4xl font-bold mb-6 tracking-wide">Resume Analyzer AI</h1>
+      <h1 className="text-4xl font-bold mb-6 tracking-wide text-white">Resume Analyzer AI</h1>
+      
+      {/* File Upload */}
+      <input type="file" accept=".pdf" onChange={(e) => {
+          if (e.target.files && e.target.files[0]) {
+            setResumeFile(e.target.files[0]);
+          }
+        }} className="mb-4"
+      />
 
+      {/* Analyze Button */}
       <button
         onClick={handleAnalyze}
         disabled={loading}
