@@ -33,7 +33,6 @@ The format must be:
 Only output valid JSON. Do not say anything else.
 `;
 
-
   try {
     const response = await model.invoke([
       new SystemMessage(systemInstruction),
@@ -59,7 +58,6 @@ try {
   console.error('Failed to parse AI response:', parseError, aiText);
   return new Response(JSON.stringify({ error: 'Invalid AI response format' }), { status: 500 });
 }
-
 
     return new Response(JSON.stringify({ answer: parsedAnswer }), {
       status: 200,

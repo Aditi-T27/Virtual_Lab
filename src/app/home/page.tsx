@@ -42,14 +42,6 @@ export default function UploadPage() {
     } finally {
       setLoading(false);
     }
-
-    // const res= await fetch('api/users/parser', { method:'POST', body:formData});
-
-    // // const res = await fetch('/api/users/analyser', { method: 'POST' });
-    // const data = await res.json();
-    // setResult(data.answer);
-    // console.log(data.answer);
-    // setLoading(false);
   };
 
   return (
