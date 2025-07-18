@@ -224,7 +224,6 @@ import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
 import { SystemMessage, HumanMessage } from '@langchain/core/messages';
 import { RecursiveCharacterTextSplitter } from 'langchain/text_splitter';
 import { HuggingFaceInferenceEmbeddings } from '@langchain/community/embeddings/hf'
-
 import { MemoryVectorStore } from 'langchain/vectorstores/memory';
 import fs from 'fs';
 import path from 'path';
@@ -250,7 +249,19 @@ export async function POST(req: NextRequest) {
     const parsed = await pdfParse(buffer);
     const text = parsed.text;
 
-    // ✅ Step 1: Create chunks & vectorize
+    // Save parsed PDF text to a local .txt file
+const outputTxtDir = path.join(process.cwd(), 'public', 'parsed');
+if (!fs.existsSync(outputTxtDir)) {
+    fs.mkdirSync(outputTxtDir, { recursive: true });
+}
+
+const timestamp = Date.now();
+const parsedTxtPath = path.join(outputTxtDir, `parsed-resume-${timestamp}.txt`);
+fs.writeFileSync(parsedTxtPath, text);
+
+console.log(`✅ Parsed text saved to ${parsedTxtPath}`);
+
+    // Step 1: Create chunks & vectorize
     let storedChunks: {
         id: string;
         text: string;
