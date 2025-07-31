@@ -1,8 +1,16 @@
 "use client"
 
-import type React from "react"
+import React, { createContext, useContext, useEffect, useState } from "react"
+import { auth } from "@/lib/firebase" // Make sure this path is correct
+import { supabase } from "./supabase"
 
-import { createContext, useContext, useEffect, useState } from "react"
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut as firebaseSignOut,
+  onAuthStateChanged,
+  User as FirebaseUser,
+} from "firebase/auth"
 
 interface User {
   uid: string
@@ -25,51 +33,61 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Simulate checking auth state
-    const checkAuth = () => {
-      const savedUser = localStorage.getItem("user")
-      if (savedUser) {
-        setUser(JSON.parse(savedUser))
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser) {
+        const currentUser: User = {
+          uid: firebaseUser.uid,
+          email: firebaseUser.email,
+          displayName: firebaseUser.displayName || null,
+        }
+        setUser(currentUser)
+      } else {
+        setUser(null)
       }
       setLoading(false)
-    }
+    })
 
-    checkAuth()
+    return () => unsubscribe()
   }, [])
 
   const signIn = async (email: string, password: string) => {
-    // Simulate Firebase auth
-    const mockUser = {
-      uid: "mock-uid-" + Date.now(),
-      email,
-      displayName: email.split("@")[0],
-    }
-
-    setUser(mockUser)
-    localStorage.setItem("user", JSON.stringify(mockUser))
+    await signInWithEmailAndPassword(auth, email, password)
+    // `onAuthStateChanged` will auto-update user state
   }
 
   const signUp = async (email: string, password: string, userData: any) => {
-    // Simulate Firebase auth + Supabase user creation
-    const mockUser = {
-      uid: "mock-uid-" + Date.now(),
-      email,
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password)
+    const firebaseUser = userCredential.user
+
+    const newUser: User = {
+      uid: firebaseUser.uid,
+      email: firebaseUser.email,
       displayName: userData.name,
     }
 
-    setUser(mockUser)
-    localStorage.setItem("user", JSON.stringify(mockUser))
+    setUser(newUser)
 
-    // In real app, also save to Supabase users table
-    console.log("Saving user data to Supabase:", { ...userData, user_id: mockUser.uid })
+    // Save to Supabase users table
+    const { error } = await supabase.from("users").insert([
+      {
+        user_id: firebaseUser.uid,
+        email: firebaseUser.email,
+        name: userData.name,
+        ...userData,
+      },
+    ])
+
+    if (error) {
+      console.error("Error saving to Supabase:", error)
+    }
   }
 
   const signOut = async () => {
+    await firebaseSignOut(auth)
     setUser(null)
-    localStorage.removeItem("user")
   }
 
-  const value = {
+  const value: AuthContextType = {
     user,
     loading,
     signIn,
