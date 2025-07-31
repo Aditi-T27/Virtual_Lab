@@ -1,5 +1,3 @@
-// Firebase configuration (to be implemented with actual Firebase)
-// This is a placeholder for the Firebase setup
 import { initializeApp } from 'firebase/app'
 import { getAuth } from 'firebase/auth'
 
@@ -12,3 +10,5 @@ export const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 }
 
+const app = initializeApp(firebaseConfig)
+export const auth = getAuth(app)
