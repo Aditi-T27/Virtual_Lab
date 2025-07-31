@@ -3,7 +3,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react"
 import { auth } from "@/lib/firebase" // Make sure this path is correct
 import { supabase } from "./supabase"
-
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
