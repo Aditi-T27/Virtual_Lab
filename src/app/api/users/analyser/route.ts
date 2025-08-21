@@ -106,7 +106,7 @@ Description should not be vague it should talk about the tasks and the impact / 
             new SystemMessage(systemInstruction),
             new HumanMessage(resumeText)
         ]);
-        console.log(response);
+        console.log("This is the response from the llm"+response);
 
         // ✅ Fix: Safely extract text content
         let aiText = '';

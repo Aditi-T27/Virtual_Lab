@@ -122,6 +122,7 @@ export default function LoginPage() {
 
     try {
       await signIn(email, password)
+      
       router.push("/dashboard")
     } catch (err: any) {
       setError(err.message)

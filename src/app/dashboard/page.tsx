@@ -36,15 +36,16 @@ export default function Dashboard() {
   const [resumeFile, setResumeFile] = useState<File | null>(null)
   const [showProfileModal, setShowProfileModal] = useState(false)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
-
+  const [userId, setUserId] = useState<string>("");
   useEffect(() => {
     if (!loading && !user) {
       router.push("/auth/login")
     }
   }, [user, loading, router])
 
-  if (loading) {
+  if (loading && user) {
     console.log(user);
+    setUserId(user.uid);
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
         <div className="flex flex-col items-center space-y-4">
@@ -70,6 +71,7 @@ export default function Dashboard() {
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
+       console.log("THIS IS id"+user.uid)
     if (
       file &&
       (file.type === "application/pdf" ||
@@ -81,41 +83,137 @@ export default function Dashboard() {
     }
   }
 
-  const handleAnalyzeResume = async () => {
-    if (!resumeFile || selectedDomains.length === 0) return
+//   const handleAnalyzeResume = async () => {
+//     if (!resumeFile || selectedDomains.length === 0) return
 
-    setIsAnalyzing(true)
+//     setIsAnalyzing(true)
 
-    const formData = new FormData()
-    formData.append("resume", resumeFile)
+//     const formData = new FormData()
+//     formData.append("resume", resumeFile)
 
-    try {
-      const res = await fetch("/api/users/parser", {
-        method: "POST",
-        body: formData,
-      })
+//     try {
+//   // First request: parse resume
+//   const res = await fetch("/api/users/parser", {
+//     method: "POST",
+//     body: formData,
+//   });
 
-      const data = await res.json()
+//   const data = await res.json();
 
-      if (!res.ok) {
-        throw new Error(data.error || "Resume analysis failed")
-      }
+//   if (!res.ok) {
+//     throw new Error(data.error || "Resume analysis failed");
+//   }
 
-      console.log("Parsed Resume Text:", data.resumeText)
-      console.log("Vector Embedding:", data.vector)
+//   console.log("Parsed Resume Text:", data.resumeText);
+//   console.log("Vector Embedding:", data.vector);
 
-      setTimeout(() => {
-        router.push("/resume-analysis")
-      }, 3000)
-    } catch (err) {
-      console.error("Error analyzing resume:", err)
-      alert("Something went wrong while analyzing your resume.")
-    } finally {
-      setIsAnalyzing(false)
+//   // Second request: send parsed text to analyser
+//   const resLlm = await fetch("/api/users/analyser", {
+//     method: "POST",
+//     headers: {
+//       "Content-Type": "application/json",
+//     },
+//     body: JSON.stringify({ resumeText: data.resumeText }),
+//   });
+
+//   const analyserData = await resLlm.json();
+
+//   if (!resLlm.ok) {
+//     throw new Error(analyserData.error || "LLM analysis failed");
+//   }
+
+//   console.log("LLM Response:", analyserData);
+
+  
+
+// } catch (err) {
+//   console.error("Error analyzing resume:", err);
+//   alert("Something went wrong while analyzing your resume.");
+// } finally {
+//   setIsAnalyzing(false);
+// } 
+
+//   }
+
+  
+
+//   const canAnalyze = resumeFile && selectedDomains.length > 0
+
+
+const handleAnalyzeResume = async () => {
+  if (!resumeFile || selectedDomains.length === 0) return;
+
+  setIsAnalyzing(true);
+
+  const formData = new FormData();
+  formData.append("resume", resumeFile);
+
+  try {
+    // 1️⃣ Parse resume
+    const res = await fetch("/api/users/parser", {
+      method: "POST",
+      body: formData,
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error || "Resume analysis failed");
     }
-  }
 
-  const canAnalyze = resumeFile && selectedDomains.length > 0
+    console.log("Parsed Resume Text:", data.resumeText);
+    console.log("Vector Embedding:", data.vector);
+
+    // 2️⃣ Analyse with LLM
+    const resLlm = await fetch("/api/users/analyser", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ resumeText: data.resumeText }),
+    });
+
+    const analyserData = await resLlm.json();
+
+    if (!resLlm.ok) {
+      throw new Error(analyserData.error || "LLM analysis failed");
+    }
+
+    console.log("LLM Response:", analyserData);
+
+    // 3️⃣ Save to Supabase via your API
+    const resSave = await fetch("/api/users/save-analysis", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        userId: user.uid, // 🔑 inject real userId from auth/session
+        analyserData,
+      }),
+    });
+
+    const saveResult = await resSave.json();
+
+    if (!resSave.ok) {
+      throw new Error(saveResult.error || "Saving analysis failed");
+    }
+
+    console.log("Saved Analysis:", saveResult);
+
+    // 4️⃣ Redirect to analyser page with analysisId in URL
+    router.push(`/resume-analysis?id=${saveResult.analysisId}`);
+  } catch (err) {
+    console.error("Error analyzing resume:", err);
+    alert("Something went wrong while analyzing your resume.");
+  } finally {
+    setIsAnalyzing(false);
+  }
+};
+
+// ✅ This ensures the analyze button is only enabled when file + domain exist
+const canAnalyze = resumeFile && selectedDomains.length > 0;
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 relative overflow-hidden">
